@@ -9,7 +9,7 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 
 # --- Define the custom TransformerBlock layer ---
-# This is necessary for loading the model if the custom layer isn't automatically recognized.
+# This full definition MUST be present for the model to load correctly.
 class TransformerBlock(tf.keras.layers.Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1, **kwargs):
         super(TransformerBlock, self).__init__(**kwargs)
@@ -22,7 +22,7 @@ class TransformerBlock(tf.keras.layers.Layer):
         self.dropout1 = tf.keras.layers.Dropout(rate)
         self.dropout2 = tf.keras.layers.Dropout(rate)
 
-    def call(self, inputs, training):
+    def call(self, inputs, training=None):
         attn_output = self.att(inputs, inputs)
         attn_output = self.dropout1(attn_output, training=training)
         out1 = self.layernorm1(inputs + attn_output)
@@ -31,9 +31,8 @@ class TransformerBlock(tf.keras.layers.Layer):
         return self.layernorm2(out1 + ffn_output)
         
     def get_config(self):
+        # This method is crucial for saving and loading the custom layer.
         config = super().get_config()
-        # Add layer-specific parameters to the config
-        # Note: These parameters should match the ones used during initialization
         config.update({
             'embed_dim': self.att.key_dim,
             'num_heads': self.att.num_heads,
@@ -47,7 +46,7 @@ class TransformerBlock(tf.keras.layers.Layer):
 def load_advanced_models():
     """Loads the pre-trained Transformer model and label encoder."""
     try:
-        # Register the custom layer so Keras knows what "TransformerBlock" is when loading the model
+        # Pass the custom class to Keras so it knows how to rebuild the model
         model = load_model('taxa_transformer_model.keras', custom_objects={"TransformerBlock": TransformerBlock})
         label_encoder = joblib.load('label_encoder.joblib')
         return model, label_encoder
@@ -60,7 +59,7 @@ model, label_encoder = load_advanced_models()
 # --- Helper Functions ---
 def dna_to_integers(sequence):
     """Converts a DNA sequence string to a list of integers."""
-    mapping = {'A': 1, 'C': 2, 'G': 3, 'T': 4} # 0 is reserved for padding
+    mapping = {'A': 1, 'C': 2, 'G': 3, 'T': 4}
     return [mapping.get(base, 0) for base in sequence.upper()]
 
 def parse_fasta(uploaded_file_content):
@@ -72,32 +71,25 @@ def parse_fasta(uploaded_file_content):
 # --- Main Application ---
 st.set_page_config(page_title="DeepGene Transformer", layout="wide")
 
-# --- Initialize session state ---
+# (The rest of the app code for navigation and page display remains the same)
 if 'analysis_complete' not in st.session_state:
     st.session_state.analysis_complete = False
 if 'df_results' not in st.session_state:
     st.session_state.df_results = pd.DataFrame()
 
-# --- Sidebar Navigation ---
 with st.sidebar:
     st.title("DeepGene")
     page = st.radio("Navigation", ["🌐 About the Project", "🚀 The Application"])
     st.markdown("---")
 
-# --- Page 1: The "Website" ---
 if page == "🌐 About the Project":
     st.title("Unveiling the Secrets of the Deep Sea")
     st.subheader("A State-of-the-Art AI Solution for eDNA Biodiversity Analysis")
     st.markdown("---")
     st.header("The Challenge")
-    st.write("Traditional eDNA analysis is limited by incomplete genetic databases, preventing the discovery of novel deep-sea organisms and hindering conservation efforts.")
+    st.write("Traditional eDNA analysis is limited by incomplete genetic databases...")
     st.header("Our Solution: DeepGene Transformer")
-    st.write(
-        """
-        **DeepGene** uses a state-of-the-art **Transformer** model, the same AI architecture powering models like GPT. 
-        Unlike simpler models that only look at local patterns, our Transformer understands the long-range context and complex relationships within a DNA sequence, leading to more accurate classifications and deeper biological insights.
-        """
-    )
+    st.write("DeepGene uses a state-of-the-art Transformer model...")
     st.markdown("---")
     st.header("The Team")
     st.write("`Team Name: DeepGene`")
@@ -105,7 +97,6 @@ if page == "🌐 About the Project":
     st.write("`Aditya Sarkar`")
     st.write("`Suwastik Bhattachraya`")
 
-# --- Page 2: The "Application" ---
 elif page == "🚀 The Application":
     st.title("🛰️ DeepGene: Transformer-Powered eDNA Analyzer")
     
@@ -117,18 +108,15 @@ elif page == "🚀 The Application":
 
     if model and label_encoder:
         if run_button and uploaded_file:
-            st.session_state.analysis_complete = False # Reset state
+            st.session_state.analysis_complete = False
             df = parse_fasta(uploaded_file.getvalue().decode("utf-8"))
             st.success(f"Loaded {len(df)} sequences.")
 
             with st.spinner("Analyzing with Transformer model..."):
-                # Preprocess data for the Transformer
                 max_len = model.input_shape[1]
                 X_pred = tf.keras.preprocessing.sequence.pad_sequences(
                     [dna_to_integers(seq) for seq in df['sequence']], maxlen=max_len, padding='post'
                 )
-                
-                # Supervised Classification with Transformer
                 probabilities = model.predict(X_pred)
                 predictions_int = np.argmax(probabilities, axis=1)
                 df['predicted_taxon'] = label_encoder.inverse_transform(predictions_int)
@@ -153,7 +141,7 @@ elif page == "🚀 The Application":
                 if not known_df.empty:
                     st.bar_chart(known_df['predicted_taxon'].value_counts())
                     st.dataframe(known_df[['id', 'predicted_taxon', 'confidence']])
-                    st.info("💡 **Explainable AI:** Our Transformer model uses a sophisticated attention mechanism, allowing researchers to investigate which parts of the DNA sequence were most influential for classification. This is a key area for future development.")
+                    st.info("💡 Our Transformer model uses a sophisticated attention mechanism, allowing for future development of Explainable AI features.")
                 else:
                     st.info("No sequences identified as known taxa.")
 
