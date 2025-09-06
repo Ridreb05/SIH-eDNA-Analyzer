@@ -51,12 +51,12 @@ def plot_saliency_map(sequence, scores):
     return fig
 
 # --- Main Application ---
-st.set_page_config(page_title="Aqua-AI eDNA Analyzer", layout="wide")
+st.set_page_config(page_title="DeepGene eDNA Analyzer", layout="wide")
 
 # --- Sidebar Navigation ---
 with st.sidebar:
-    st.image("https://i.imgur.com/JJ4xS2k.png", width=150) # A sample logo
-    st.title("Aqua-AI")
+    # You can create a simple logo or use text
+    st.title("DeepGene")
     page = st.radio("Navigation", ["🌐 About the Project", "🚀 The Application"])
     st.markdown("---")
 
@@ -76,10 +76,10 @@ if page == "🌐 About the Project":
         """
     )
 
-    st.header("Our Solution: Aqua-AI")
+    st.header("Our Solution: DeepGene")
     st.write(
         """
-        **Aqua-AI** is an intelligent, user-friendly web application that revolutionizes eDNA analysis. 
+        **DeepGene** is an intelligent, user-friendly web application that revolutionizes eDNA analysis. 
         Our platform uses a state-of-the-art **Hybrid AI Pipeline** to deliver rapid and accurate biodiversity insights.
         """
     )
@@ -97,15 +97,17 @@ if page == "🌐 About the Project":
     
     st.markdown("---")
     st.header("The Team")
-    st.write("`[Your Team Name]`")
-    st.write("`[List Your Team Members' Names Here]`")
+    st.write("`Team Name: DeepGene`")
+    st.write("`Debanik Das`")
+    st.write("`Aditya Sarkar`")
+    st.write("`Suwastik Bhattachraya`")
 
 
 # --- Page 2: The "Application" ---
 elif page == "🚀 The Application":
     model, label_encoder = load_deep_learning_models()
     
-    st.title("✨ XAI eDNA Biodiversity Analyzer")
+    st.title("✨ DeepGene: XAI eDNA Biodiversity Analyzer")
     
     with st.sidebar:
         st.header("Controls")
