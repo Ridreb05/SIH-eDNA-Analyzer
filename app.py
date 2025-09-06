@@ -108,7 +108,7 @@ if page == "🌐 About the Project":
     st.markdown("---")
     st.markdown("### 👥 The Team")
     st.write("**Team Name:** DeepGene")
-    st.write("- **Debanik Das**\n- **Aditya Sarkar**\n- **Suswastik Bhattacharya**")
+    st.write("- **Debanik Das**\n- **Aditya Sarkar**\n- **Suswastik Bhattacharjee**\n- **Anirban Sebait**\n- **Akangkhita Basu**\n- **Harmeet Kaur**")
 
 # --- NEW: How it Works Page ---
 elif page == "⚙️ How DeepGene Works":
