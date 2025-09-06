@@ -7,58 +7,70 @@ import hdbscan
 import io
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-import plotly.graph_objects as go
 
-# --- Load Pre-trained Deep Learning Models ---
+# --- Define the custom TransformerBlock layer ---
+# This is necessary for loading the model if the custom layer isn't automatically recognized.
+class TransformerBlock(tf.keras.layers.Layer):
+    def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1, **kwargs):
+        super(TransformerBlock, self).__init__(**kwargs)
+        self.att = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
+        self.ffn = tf.keras.Sequential(
+            [tf.keras.layers.Dense(ff_dim, activation="relu"), tf.keras.layers.Dense(embed_dim),]
+        )
+        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.dropout1 = tf.keras.layers.Dropout(rate)
+        self.dropout2 = tf.keras.layers.Dropout(rate)
+
+    def call(self, inputs, training):
+        attn_output = self.att(inputs, inputs)
+        attn_output = self.dropout1(attn_output, training=training)
+        out1 = self.layernorm1(inputs + attn_output)
+        ffn_output = self.ffn(out1)
+        ffn_output = self.dropout2(ffn_output, training=training)
+        return self.layernorm2(out1 + ffn_output)
+        
+    def get_config(self):
+        config = super().get_config()
+        # Add layer-specific parameters to the config
+        # Note: These parameters should match the ones used during initialization
+        config.update({
+            'embed_dim': self.att.key_dim,
+            'num_heads': self.att.num_heads,
+            'ff_dim': self.ffn.layers[0].units,
+            'rate': self.dropout1.rate,
+        })
+        return config
+
+# --- Load Pre-trained Transformer Model ---
 @st.cache_resource
-def load_deep_learning_models():
+def load_advanced_models():
+    """Loads the pre-trained Transformer model and label encoder."""
     try:
-        model = load_model('taxa_cnn_model.keras')
+        # Register the custom layer so Keras knows what "TransformerBlock" is when loading the model
+        model = load_model('taxa_transformer_model.keras', custom_objects={"TransformerBlock": TransformerBlock})
         label_encoder = joblib.load('label_encoder.joblib')
         return model, label_encoder
     except Exception as e:
-        st.error(f"Model files not found or failed to load! Run 'train_cnn_model.py' first. Error: {e}")
+        st.error(f"Model files not found or failed to load! Run 'train_transformer_model.py' first. Error: {e}")
         return None, None
 
-model, label_encoder = load_deep_learning_models()
+model, label_encoder = load_advanced_models()
 
-# --- Helper & XAI Functions ---
-def one_hot_encode(sequence, max_len):
-    """ One-hot encodes a DNA sequence, handling both padding and trimming. """
-    sequence = sequence[:max_len] # Truncate if longer
-    mapping = {'A': [1,0,0,0], 'C': [0,1,0,0], 'G': [0,0,1,0], 'T': [0,0,0,1]}
-    encoded_seq = np.array([mapping.get(base, [0,0,0,0]) for base in sequence.upper()])
-    pad_width = max_len - len(sequence)
-    padded_seq = np.pad(encoded_seq, ((0, pad_width), (0,0)), 'constant')
-    return padded_seq
+# --- Helper Functions ---
+def dna_to_integers(sequence):
+    """Converts a DNA sequence string to a list of integers."""
+    mapping = {'A': 1, 'C': 2, 'G': 3, 'T': 4} # 0 is reserved for padding
+    return [mapping.get(base, 0) for base in sequence.upper()]
 
 def parse_fasta(uploaded_file_content):
+    """Parses a FASTA file from its content and returns a DataFrame."""
     stringio = io.StringIO(uploaded_file_content)
     sequences = [{'id': record.id, 'sequence': str(record.seq)} for record in SeqIO.parse(stringio, "fasta")]
     return pd.DataFrame(sequences)
 
-def generate_saliency_map(model, input_sequence):
-    max_len = model.input_shape[1]
-    input_tensor = tf.convert_to_tensor(one_hot_encode(input_sequence, max_len).reshape(1, max_len, 4), dtype=tf.float32)
-
-    with tf.GradientTape() as tape:
-        tape.watch(input_tensor)
-        predictions = model(input_tensor)
-        top_prediction_index = tf.argmax(predictions[0])
-        top_class_prediction = predictions[:, top_prediction_index]
-    
-    gradients = tape.gradient(top_class_prediction, input_tensor)
-    saliency_scores = tf.reduce_max(tf.abs(gradients), axis=-1)[0]
-    saliency_scores = (saliency_scores - tf.reduce_min(saliency_scores)) / (tf.reduce_max(saliency_scores) - tf.reduce_min(saliency_scores) + 1e-8)
-    return saliency_scores.numpy()[:len(input_sequence)]
-
-def plot_saliency_map(sequence, scores):
-    fig = go.Figure(data=go.Heatmap(z=[scores], x=list(sequence), y=['Importance'], colorscale='Reds', showscale=False))
-    fig.update_layout(title='DNA Saliency Map', xaxis_title="DNA Sequence", yaxis_title="")
-    return fig
-
 # --- Main Application ---
-st.set_page_config(page_title="DeepGene eDNA Analyzer", layout="wide")
+st.set_page_config(page_title="DeepGene Transformer", layout="wide")
 
 # --- Initialize session state ---
 if 'analysis_complete' not in st.session_state:
@@ -72,26 +84,20 @@ with st.sidebar:
     page = st.radio("Navigation", ["🌐 About the Project", "🚀 The Application"])
     st.markdown("---")
 
-
 # --- Page 1: The "Website" ---
 if page == "🌐 About the Project":
-    # (Content for this page remains the same)
     st.title("Unveiling the Secrets of the Deep Sea")
-    st.subheader("An AI-Powered Solution for eDNA Biodiversity Analysis")
+    st.subheader("A State-of-the-Art AI Solution for eDNA Biodiversity Analysis")
     st.markdown("---")
     st.header("The Challenge")
-    st.write("The deep ocean is Earth's last great frontier... hindering conservation and discovery.")
-    st.header("Our Solution: DeepGene")
-    st.write("**DeepGene** is an intelligent, user-friendly web application that revolutionizes eDNA analysis...")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("🧠 Deep Learning Classification")
-        st.write("A Convolutional Neural Network (CNN) instantly identifies known species...")
-    with col2:
-        st.subheader("🔬 Unsupervised Discovery")
-        st.write("An HDBSCAN algorithm analyzes unknown sequences to discover potential novel species.")
-    st.subheader("✨ Explainable AI (XAI)")
-    st.write("Our unique DNA Saliency Maps allow scientists to see *why* the AI made a decision...")
+    st.write("Traditional eDNA analysis is limited by incomplete genetic databases, preventing the discovery of novel deep-sea organisms and hindering conservation efforts.")
+    st.header("Our Solution: DeepGene Transformer")
+    st.write(
+        """
+        **DeepGene** uses a state-of-the-art **Transformer** model, the same AI architecture powering models like GPT. 
+        Unlike simpler models that only look at local patterns, our Transformer understands the long-range context and complex relationships within a DNA sequence, leading to more accurate classifications and deeper biological insights.
+        """
+    )
     st.markdown("---")
     st.header("The Team")
     st.write("`Team Name: DeepGene`")
@@ -101,43 +107,44 @@ if page == "🌐 About the Project":
 
 # --- Page 2: The "Application" ---
 elif page == "🚀 The Application":
-    model, label_encoder = load_deep_learning_models()
-    
-    st.title("✨ DeepGene: XAI eDNA Biodiversity Analyzer")
+    st.title("🛰️ DeepGene: Transformer-Powered eDNA Analyzer")
     
     with st.sidebar:
         st.header("Controls")
         uploaded_file = st.file_uploader("Upload FASTA file", type=["fasta", "fa"])
         confidence_threshold = st.slider("Confidence Threshold", 0.5, 1.0, 0.8, 0.05)
-        run_button = st.button("Analyze with XAI", type="primary", use_container_width=True)
+        run_button = st.button("Analyze with Transformer AI", type="primary", use_container_width=True)
 
     if model and label_encoder:
         if run_button and uploaded_file:
-            st.session_state.analysis_complete = False # Reset state on new run
+            st.session_state.analysis_complete = False # Reset state
             df = parse_fasta(uploaded_file.getvalue().decode("utf-8"))
             st.success(f"Loaded {len(df)} sequences.")
 
-            with st.spinner("Analyzing with Deep Learning model..."):
-                X_pred = np.array([one_hot_encode(seq, model.input_shape[1]) for seq in df['sequence']])
+            with st.spinner("Analyzing with Transformer model..."):
+                # Preprocess data for the Transformer
+                max_len = model.input_shape[1]
+                X_pred = tf.keras.preprocessing.sequence.pad_sequences(
+                    [dna_to_integers(seq) for seq in df['sequence']], maxlen=max_len, padding='post'
+                )
+                
+                # Supervised Classification with Transformer
                 probabilities = model.predict(X_pred)
                 predictions_int = np.argmax(probabilities, axis=1)
-                
                 df['predicted_taxon'] = label_encoder.inverse_transform(predictions_int)
                 df['confidence'] = probabilities.max(axis=1)
-
-            # Save the final, complete DataFrame to the session state
+            
             st.session_state.df_results = df
             st.session_state.analysis_complete = True
-
-        # This block now only runs if the analysis has successfully completed.
+        
         if st.session_state.analysis_complete:
             df = st.session_state.df_results
             known_df = df[df['confidence'] >= confidence_threshold]
             unknown_df = df[df['confidence'] < confidence_threshold]
             
             st.header("Analysis Dashboard")
-            tab1, tab2, tab3 = st.tabs(["📊 Overview", "✅ Known Taxa (XAI)", "🔍 Novel Taxa (HDBSCAN)"])
-
+            tab1, tab2, tab3 = st.tabs(["📊 Overview", "✅ Known Taxa (Transformer)", "🔍 Novel Taxa (HDBSCAN)"])
+            
             with tab1:
                 st.metric("Known Sequences", len(known_df))
                 st.metric("Unknown Sequences", len(unknown_df))
@@ -145,15 +152,8 @@ elif page == "🚀 The Application":
             with tab2:
                 if not known_df.empty:
                     st.bar_chart(known_df['predicted_taxon'].value_counts())
-                    for index, row in known_df.iterrows():
-                        col1, col2, col3 = st.columns([2, 2, 1])
-                        col1.text(f"ID: {row['id']}")
-                        col2.text(f"Prediction: {row['predicted_taxon']} (Conf: {row['confidence']:.2f})")
-                        if col3.button("View Saliency Map", key=f"btn_{index}"):
-                            with st.spinner("Generating Saliency Map..."):
-                                saliency_scores = generate_saliency_map(model, row['sequence'])
-                                saliency_plot = plot_saliency_map(row['sequence'], saliency_scores)
-                                st.plotly_chart(saliency_plot, use_container_width=True)
+                    st.dataframe(known_df[['id', 'predicted_taxon', 'confidence']])
+                    st.info("💡 **Explainable AI:** Our Transformer model uses a sophisticated attention mechanism, allowing researchers to investigate which parts of the DNA sequence were most influential for classification. This is a key area for future development.")
                 else:
                     st.info("No sequences identified as known taxa.")
 
