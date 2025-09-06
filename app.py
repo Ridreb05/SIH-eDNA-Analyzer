@@ -73,106 +73,150 @@ def get_blast_annotation(sequence):
 # --- Main Application ---
 st.set_page_config(page_title="DeepGene Flagship", layout="wide")
 
-# (Session state initialization and sidebar are the same)
-
+# --- Initialize Session State ---
 if 'analysis_complete' not in st.session_state:
     st.session_state.analysis_complete = False
 
 # --- Sidebar ---
 with st.sidebar:
+    st.image("https://i.imgur.com/nw34Vz8.png", width=150) # A more thematic logo
     st.title("DeepGene")
-    page = st.radio("Navigation", ["🌐 About the Project", "🚀 The Application"])
+    page = st.radio("Navigation", ["🌐 About the Project", "🚀 The Application"], label_visibility="hidden")
     st.markdown("---")
 
 # --- About Page ---
 if page == "🌐 About the Project":
     st.title("Unveiling the Secrets of the Deep Sea")
-    st.subheader("A State-of-the-Art AI Research Platform for eDNA Analysis")
-    # ... (Rest of about page)
+    st.subheader("An AI-Powered Research Platform for eDNA Biodiversity Analysis")
+    st.markdown("---")
+
+    st.markdown("### 🌊 The Challenge: A Universe of Unknowns")
+    st.write(
+        """
+        The deep ocean is Earth's last great frontier, a vast reservoir of undiscovered life. Traditional methods of identifying species from **environmental DNA (eDNA)** fail because they rely on genetic databases that are critically incomplete for deep-sea organisms. This bottleneck hinders vital conservation efforts and prevents the discovery of novel species with profound biotechnological potential. CMLRE scientists need a tool that can navigate this uncharted genetic territory.
+        """
+    )
+    st.markdown("---")
+
+    st.markdown("### ✨ Our Solution: DeepGene")
+    st.write(
+        """
+        **DeepGene** is an intelligent, user-friendly web application that revolutionizes eDNA analysis. Our platform uses a state-of-the-art **Transformer-based AI pipeline** to deliver rapid, accurate, and scientifically transparent biodiversity insights. We don't just find what's known; we illuminate the unknown.
+        """
+    )
+    
+    st.markdown("#### Key Innovations")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.container(border=True):
+            st.markdown("##### 🧠 **Transformer AI Core**")
+            st.write("Our model understands the long-range context of DNA, providing superior accuracy for classifying known species.")
+    with col2:
+        with st.container(border=True):
+            st.markdown("##### 🔬 **Unsupervised Discovery Engine**")
+            st.write("HDBSCAN and UMAP algorithms work together to find and visualize clusters of potential novel species from unknown data.")
+
+    with st.container(border=True):
+        st.markdown("##### 🛰️ **Live NCBI Annotation**")
+        st.write("Seamlessly connects our AI's discoveries to the world's largest genetic database, providing real-time biological context to novel findings.")
+
+    st.markdown("---")
+    st.markdown("### 👥 The Team")
+    st.write("**Team Name:** DeepGene")
+    st.write("""
+    - **Debanik Das**
+    - **Aditya Sarkar**
+    - **Suwastik Bhattachraya**
+    """)
+
 
 # --- Application Page ---
 elif page == "🚀 The Application":
     st.title("🛰️ DeepGene: Ecological Discovery Engine")
     
     with st.sidebar:
-        st.header("Controls")
-        uploaded_file = st.file_uploader("Upload FASTA file", type=["fasta", "fa"])
-        confidence_threshold = st.slider("Confidence Threshold", 0.5, 1.0, 0.8, 0.05)
+        st.header("Analysis Controls")
+        uploaded_file = st.file_uploader("Upload your FASTA file", type=["fasta", "fa"], help="Upload a standard FASTA file containing your eDNA sequences.")
+        confidence_threshold = st.slider("Confidence Threshold", 0.5, 1.0, 0.8, 0.05, help="The minimum confidence score for our AI to classify a sequence as 'known'.")
         run_button = st.button("Run Full Analysis", type="primary", use_container_width=True)
 
     if model and label_encoder:
         if run_button and uploaded_file:
-            # (Analysis logic is the same)
             df = parse_fasta(uploaded_file.getvalue().decode("utf-8"))
             max_len = model.input_shape[1]
             X_pred = tf.keras.preprocessing.sequence.pad_sequences([dna_to_integers(seq) for seq in df['sequence']], maxlen=max_len, padding='post')
-            probabilities = model.predict(X_pred)
+            with st.spinner("Classifying sequences with Transformer AI..."):
+                probabilities = model.predict(X_pred)
             df['predicted_taxon'] = label_encoder.inverse_transform(np.argmax(probabilities, axis=1))
             df['confidence'] = probabilities.max(axis=1)
             st.session_state.df_results = df
             st.session_state.analysis_complete = True
+            st.success("Initial classification complete!")
         
         if st.session_state.analysis_complete:
             df = st.session_state.df_results
             known_df = df[df['confidence'] >= confidence_threshold]
-            unknown_df = df[df['confidence'] < confidence_threshold].copy() # Use .copy() to avoid warnings
+            unknown_df = df[df['confidence'] < confidence_threshold].copy()
             
             st.header("Analysis Dashboard")
-            tab1, tab2, tab3 = st.tabs(["📊 Overview", "✅ Known Taxa (Transformer)", "🔬 Novel Taxa Discovery Engine"])
+            tab1, tab2, tab3 = st.tabs(["📊 Overview", "✅ Known Taxa", "🔬 Novel Taxa Discovery"])
             
             with tab1:
-                # (Overview tab is the same)
-                st.metric("Known Sequences", len(known_df))
-                st.metric("Unknown Sequences", len(unknown_df))
+                st.subheader("High-Level Summary")
+                col1, col2 = st.columns(2)
+                col1.metric("Known Sequences (High Confidence)", len(known_df))
+                col2.metric("Unknown Sequences for Discovery", len(unknown_df))
 
             with tab2:
-                # (Known Taxa tab is the same)
+                st.subheader("Composition of Known Taxa")
                 if not known_df.empty:
                     st.bar_chart(known_df['predicted_taxon'].value_counts())
-                else: st.info("No sequences identified as known taxa.")
+                    with st.expander("View Detailed Classification Data"):
+                        st.dataframe(known_df[['id', 'predicted_taxon', 'confidence']])
+                else: 
+                    st.info("No sequences met the confidence threshold to be classified as 'known'.")
             
             with tab3:
-                st.subheader("Analysis of Unknown Sequences")
+                st.subheader("Discovery Engine for Unknown Sequences")
                 if not unknown_df.empty:
-                    # Unsupervised Discovery with HDBSCAN
-                    vectorizer = CountVectorizer(analyzer='char', ngram_range=(4, 4))
-                    unknown_vectors = vectorizer.fit_transform(unknown_df['sequence'])
-                    clusterer = hdbscan.HDBSCAN(min_cluster_size=2)
-                    unknown_df['cluster_id'] = clusterer.fit_predict(unknown_vectors)
+                    with st.spinner("Mapping the novel genetic space..."):
+                        vectorizer = CountVectorizer(analyzer='char', ngram_range=(4, 4))
+                        unknown_vectors = vectorizer.fit_transform(unknown_df['sequence'])
+                        clusterer = hdbscan.HDBSCAN(min_cluster_size=2)
+                        unknown_df['cluster_id'] = clusterer.fit_predict(unknown_vectors)
+                        
+                        reducer = umap.UMAP(n_neighbors=max(2, min(15, len(unknown_df)-1)), min_dist=0.1, n_components=2, random_state=42)
+                        embedding = reducer.fit_transform(unknown_vectors)
+                        unknown_df['umap_x'] = embedding[:, 0]
+                        unknown_df['umap_y'] = embedding[:, 1]
+                        
+                        unknown_df['display_label'] = unknown_df['cluster_id'].apply(lambda x: f'Cluster {x+1}' if x != -1 else 'Noise')
                     
-                    # --- NEW: Interactive UMAP Visualization ---
-                    st.subheader("Interactive Map of Novel Genetic Space (UMAP)")
-                    reducer = umap.UMAP(n_neighbors=max(2, len(unknown_df)//10), min_dist=0.1, n_components=2, random_state=42)
-                    embedding = reducer.fit_transform(unknown_vectors)
-                    unknown_df['umap_x'] = embedding[:, 0]
-                    unknown_df['umap_y'] = embedding[:, 1]
-                    
-                    # Create a human-readable label
-                    unknown_df['display_label'] = unknown_df['cluster_id'].apply(lambda x: f'Cluster {x+1}' if x != -1 else 'Noise')
-                    
+                    st.markdown("#### Interactive Map of Novel Genetic Space (UMAP)")
                     fig = px.scatter(
                         unknown_df, x='umap_x', y='umap_y', color='display_label',
-                        hover_data=['id'], title="Discovered Novel Clusters",
+                        hover_data=['id'], title="Hover over points to see Sequence IDs",
                         labels={'color': 'Cluster ID'}
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
-                    # --- NEW: Live BLAST Annotation ---
-                    st.subheader("Annotate Discovered Clusters with NCBI BLAST")
-                    st.write("Select a representative sequence from each cluster to find its closest known relative.")
-                    
+                    st.markdown("#### Annotate Discovered Clusters with NCBI BLAST")
                     representative_df = unknown_df[unknown_df['cluster_id'] != -1].groupby('display_label').first().reset_index()
                     
                     if not representative_df.empty:
                         for index, row in representative_df.iterrows():
-                            col1, col2 = st.columns([3, 1])
-                            col1.text(f"Representative for {row['display_label']}: {row['id']}")
-                            if col2.button("BLAST this sequence", key=f"blast_{index}"):
-                                with st.spinner(f"Querying NCBI for {row['id']}... This can take up to a minute."):
-                                    annotation = get_blast_annotation(row['sequence'])
-                                    st.success(f"**Top NCBI Match:** {annotation}")
+                            with st.container(border=True):
+                                col1, col2 = st.columns([3, 1])
+                                col1.text(f"Representative for {row['display_label']}: {row['id']}")
+                                if col2.button("BLAST this sequence", key=f"blast_{index}"):
+                                    with st.spinner(f"Querying NCBI for {row['id']}... This can take up to a minute."):
+                                        annotation = get_blast_annotation(row['sequence'])
+                                        st.success(f"**Top NCBI Match:** {annotation}")
                     else:
                         st.info("No stable clusters were found to annotate.")
                 else:
-                    st.info("No sequences to analyze for novelty.")
+                    st.info("No unknown sequences to analyze for novelty.")
+    else:
+        st.warning("Application requires model files. Please ensure the training script has been run and models are present.")
 
