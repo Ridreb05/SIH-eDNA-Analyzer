@@ -79,7 +79,7 @@ if 'analysis_complete' not in st.session_state:
 
 # --- Sidebar ---
 with st.sidebar:
-    st.image("https://i.imgur.com/nw34Vz8.png", width=150) # A more thematic logo
+    st.image("https://upload.wikimedia.org/wikipedia/en/thumb/d/df/Amity_University_Kolkata.svg/800px-Amity_University_Kolkata.svg.png", width=150) # University Logo
     st.title("DeepGene")
     page = st.radio("Navigation", ["🌐 About the Project", "🚀 The Application"], label_visibility="hidden")
     st.markdown("---")
@@ -154,7 +154,7 @@ elif page == "🚀 The Application":
             st.session_state.analysis_complete = True
             st.success("Initial classification complete!")
         
-        if st.session_state.analysis_complete:
+        if st.session_state.get('analysis_complete', False):
             df = st.session_state.df_results
             known_df = df[df['confidence'] >= confidence_threshold]
             unknown_df = df[df['confidence'] < confidence_threshold].copy()
