@@ -6,3 +6,5 @@ hdbscan
 tensorflow
 biopython
 plotly
+umap-learn
+scikit-learn
