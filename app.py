@@ -23,22 +23,13 @@ def load_deep_learning_models():
 model, label_encoder = load_deep_learning_models()
 
 # --- Helper & XAI Functions ---
-
 def one_hot_encode(sequence, max_len):
-    """
-    One-hot encodes a DNA sequence, handling both padding and trimming.
-    """
-    # First, truncate the sequence if it's longer than max_len
-    sequence = sequence[:max_len]
-    
+    """ One-hot encodes a DNA sequence, handling both padding and trimming. """
+    sequence = sequence[:max_len] # Truncate if longer
     mapping = {'A': [1,0,0,0], 'C': [0,1,0,0], 'G': [0,0,1,0], 'T': [0,0,0,1]}
     encoded_seq = np.array([mapping.get(base, [0,0,0,0]) for base in sequence.upper()])
-    
-    # Then, pad the sequence if it's shorter than max_len
     pad_width = max_len - len(sequence)
-    # This calculation will now never be negative
     padded_seq = np.pad(encoded_seq, ((0, pad_width), (0,0)), 'constant')
-    
     return padded_seq
 
 def parse_fasta(uploaded_file_content):
@@ -59,26 +50,21 @@ def generate_saliency_map(model, input_sequence):
     gradients = tape.gradient(top_class_prediction, input_tensor)
     saliency_scores = tf.reduce_max(tf.abs(gradients), axis=-1)[0]
     saliency_scores = (saliency_scores - tf.reduce_min(saliency_scores)) / (tf.reduce_max(saliency_scores) - tf.reduce_min(saliency_scores) + 1e-8)
-    
     return saliency_scores.numpy()[:len(input_sequence)]
 
 def plot_saliency_map(sequence, scores):
-    fig = go.Figure(data=go.Heatmap(
-        z=[scores],
-        x=list(sequence),
-        y=['Importance'],
-        colorscale='Reds',
-        showscale=False
-    ))
-    fig.update_layout(
-        title='DNA Saliency Map (Importance of Each Nucleotide for Classification)',
-        xaxis_title="DNA Sequence",
-        yaxis_title=""
-    )
+    fig = go.Figure(data=go.Heatmap(z=[scores], x=list(sequence), y=['Importance'], colorscale='Reds', showscale=False))
+    fig.update_layout(title='DNA Saliency Map', xaxis_title="DNA Sequence", yaxis_title="")
     return fig
 
 # --- Main Application ---
 st.set_page_config(page_title="DeepGene eDNA Analyzer", layout="wide")
+
+# --- Initialize session state ---
+if 'analysis_complete' not in st.session_state:
+    st.session_state.analysis_complete = False
+if 'df_results' not in st.session_state:
+    st.session_state.df_results = pd.DataFrame()
 
 # --- Sidebar Navigation ---
 with st.sidebar:
@@ -89,45 +75,29 @@ with st.sidebar:
 
 # --- Page 1: The "Website" ---
 if page == "🌐 About the Project":
+    # (Content for this page remains the same)
     st.title("Unveiling the Secrets of the Deep Sea")
     st.subheader("An AI-Powered Solution for eDNA Biodiversity Analysis")
     st.markdown("---")
-    
     st.header("The Challenge")
-    st.write(
-        """
-        The deep ocean is Earth's last great frontier, holding a vast reservoir of undiscovered biodiversity. 
-        Traditional methods for studying these ecosystems are slow, invasive, and limited by incomplete genetic databases. 
-        This prevents scientists at CMLRE from getting a clear, timely picture of deep-sea life, hindering conservation and discovery.
-        """
-    )
-
+    st.write("The deep ocean is Earth's last great frontier... hindering conservation and discovery.")
     st.header("Our Solution: DeepGene")
-    st.write(
-        """
-        **DeepGene** is an intelligent, user-friendly web application that revolutionizes eDNA analysis. 
-        Our platform uses a state-of-the-art **Hybrid AI Pipeline** to deliver rapid and accurate biodiversity insights.
-        """
-    )
-    
+    st.write("**DeepGene** is an intelligent, user-friendly web application that revolutionizes eDNA analysis...")
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("🧠 Deep Learning Classification")
-        st.write("A Convolutional Neural Network (CNN) instantly identifies known species with high confidence.")
+        st.write("A Convolutional Neural Network (CNN) instantly identifies known species...")
     with col2:
         st.subheader("🔬 Unsupervised Discovery")
-        st.write("An HDBSCAN algorithm analyzes unknown sequences to discover and cluster potential novel species.")
-
+        st.write("An HDBSCAN algorithm analyzes unknown sequences to discover potential novel species.")
     st.subheader("✨ Explainable AI (XAI)")
-    st.write("Our unique DNA Saliency Maps allow scientists to see *why* the AI made a decision, turning a black box into a transparent scientific tool.")
-    
+    st.write("Our unique DNA Saliency Maps allow scientists to see *why* the AI made a decision...")
     st.markdown("---")
     st.header("The Team")
     st.write("`Team Name: DeepGene`")
     st.write("`Debanik Das`")
     st.write("`Aditya Sarkar`")
     st.write("`Suwastik Bhattachraya`")
-
 
 # --- Page 2: The "Application" ---
 elif page == "🚀 The Application":
@@ -143,19 +113,25 @@ elif page == "🚀 The Application":
 
     if model and label_encoder:
         if run_button and uploaded_file:
+            st.session_state.analysis_complete = False # Reset state on new run
             df = parse_fasta(uploaded_file.getvalue().decode("utf-8"))
-            st.session_state.df = df
             st.success(f"Loaded {len(df)} sequences.")
 
-            X_pred = np.array([one_hot_encode(seq, model.input_shape[1]) for seq in df['sequence']])
-            probabilities = model.predict(X_pred)
-            predictions_int = np.argmax(probabilities, axis=1)
-            df['predicted_taxon'] = label_encoder.inverse_transform(predictions_int)
-            df['confidence'] = probabilities.max(axis=1)
-            st.session_state.df = df
-        
-        if 'df' in st.session_state:
-            df = st.session_state.df
+            with st.spinner("Analyzing with Deep Learning model..."):
+                X_pred = np.array([one_hot_encode(seq, model.input_shape[1]) for seq in df['sequence']])
+                probabilities = model.predict(X_pred)
+                predictions_int = np.argmax(probabilities, axis=1)
+                
+                df['predicted_taxon'] = label_encoder.inverse_transform(predictions_int)
+                df['confidence'] = probabilities.max(axis=1)
+
+            # Save the final, complete DataFrame to the session state
+            st.session_state.df_results = df
+            st.session_state.analysis_complete = True
+
+        # This block now only runs if the analysis has successfully completed.
+        if st.session_state.analysis_complete:
+            df = st.session_state.df_results
             known_df = df[df['confidence'] >= confidence_threshold]
             unknown_df = df[df['confidence'] < confidence_threshold]
             
