@@ -59,7 +59,6 @@ def parse_fasta(uploaded_file_content):
 
 @st.cache_data
 def get_blast_annotation(sequence):
-    """Sends a sequence to NCBI BLAST and returns the top hit."""
     try:
         result_handle = NCBIWWW.qblast("blastn", "nt", sequence, hitlist_size=1)
         blast_record = NCBIXML.read(result_handle)
@@ -73,15 +72,14 @@ def get_blast_annotation(sequence):
 # --- Main Application ---
 st.set_page_config(page_title="DeepGene Flagship", layout="wide")
 
-# --- Initialize Session State ---
 if 'analysis_complete' not in st.session_state:
     st.session_state.analysis_complete = False
 
 # --- Sidebar ---
 with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/en/thumb/d/df/Amity_University_Kolkata.svg/800px-Amity_University_Kolkata.svg.png", width=150) # University Logo
+    st.image("https://upload.wikimedia.org/wikipedia/en/thumb/d/df/Amity_University_Kolkata.svg/800px-Amity_University_Kolkata.svg.png", width=150)
     st.title("DeepGene")
-    page = st.radio("Navigation", ["🌐 About the Project", "🚀 The Application"], label_visibility="hidden")
+    page = st.radio("Navigation", ["🌐 About the Project", "⚙️ How DeepGene Works", "🚀 The Application"], label_visibility="hidden")
     st.markdown("---")
 
 # --- About Page ---
@@ -89,24 +87,12 @@ if page == "🌐 About the Project":
     st.title("Unveiling the Secrets of the Deep Sea")
     st.subheader("An AI-Powered Research Platform for eDNA Biodiversity Analysis")
     st.markdown("---")
-
     st.markdown("### 🌊 The Challenge: A Universe of Unknowns")
-    st.write(
-        """
-        The deep ocean is Earth's last great frontier, a vast reservoir of undiscovered life. Traditional methods of identifying species from **environmental DNA (eDNA)** fail because they rely on genetic databases that are critically incomplete for deep-sea organisms. This bottleneck hinders vital conservation efforts and prevents the discovery of novel species with profound biotechnological potential. CMLRE scientists need a tool that can navigate this uncharted genetic territory.
-        """
-    )
+    st.write("The deep ocean is Earth's last great frontier... CMLRE scientists need a tool that can navigate this uncharted genetic territory.")
     st.markdown("---")
-
     st.markdown("### ✨ Our Solution: DeepGene")
-    st.write(
-        """
-        **DeepGene** is an intelligent, user-friendly web application that revolutionizes eDNA analysis. Our platform uses a state-of-the-art **Transformer-based AI pipeline** to deliver rapid, accurate, and scientifically transparent biodiversity insights. We don't just find what's known; we illuminate the unknown.
-        """
-    )
-    
+    st.write("**DeepGene** is an intelligent, user-friendly web application that revolutionizes eDNA analysis...")
     st.markdown("#### Key Innovations")
-    
     col1, col2 = st.columns(2)
     with col1:
         with st.container(border=True):
@@ -116,25 +102,74 @@ if page == "🌐 About the Project":
         with st.container(border=True):
             st.markdown("##### 🔬 **Unsupervised Discovery Engine**")
             st.write("HDBSCAN and UMAP algorithms work together to find and visualize clusters of potential novel species from unknown data.")
-
     with st.container(border=True):
         st.markdown("##### 🛰️ **Live NCBI Annotation**")
         st.write("Seamlessly connects our AI's discoveries to the world's largest genetic database, providing real-time biological context to novel findings.")
-
     st.markdown("---")
     st.markdown("### 👥 The Team")
     st.write("**Team Name:** DeepGene")
-    st.write("""
-    - **Debanik Das**
-    - **Aditya Sarkar**
-    - **Suwastik Bhattachraya**
-    """)
+    st.write("- **Debanik Das**\n- **Aditya Sarkar**\n- **Suswastik Bhattacharya**")
+
+# --- NEW: How it Works Page ---
+elif page == "⚙️ How DeepGene Works":
+    st.title("Inside the Engine: The DeepGene AI Pipeline")
+    st.markdown("---")
+
+    st.image("https://i.imgur.com/8z2gZ2k.png", caption="The DeepGene Data Processing Flowchart")
+
+    with st.expander("Step 1: Data Ingestion & Preprocessing"):
+        st.markdown(
+            """
+            - **Input:** The process begins when a scientist uploads a standard **FASTA file**.
+            - **Parsing:** Our application uses the **BioPython** library, the industry standard for bioinformatics, to robustly parse the file, extracting each sequence's ID and its raw DNA string.
+            - **Feature Engineering:** The AI cannot read DNA letters (`A,C,G,T`). We convert each sequence into a numerical format the Transformer can understand through **Integer Encoding** (`A`->1, `C`->2, etc.) and then **Padding/Truncating** all sequences to a uniform length.
+            """
+        )
+    
+    with st.expander("Step 2: The Transformer Core (Supervised Classification)"):
+        st.markdown(
+            """
+            This is the heart of our AI. Every sequence is fed into our pre-trained **Transformer model**.
+            - **What is a Transformer?** It's the same AI architecture that powers models like GPT. Unlike simpler models that only see small fragments of data, a Transformer analyzes the **entire DNA sequence at once**.
+            - **Attention Mechanism:** It uses a sophisticated technique called "self-attention" to identify which parts of the DNA are most important and how they relate to each other, even if they are far apart. This allows it to learn the complex "grammar" of DNA.
+            - **Output:** For each sequence, the model outputs a **Prediction** (e.g., "Cetacea") and a **Confidence Score** (0.0 to 1.0) representing its certainty.
+            """
+        )
+
+    with st.expander("Step 3: The Hybrid Logic Gate"):
+        st.markdown(
+            """
+            This is our core innovation. The application uses the **Confidence Score** as a decision gate to intelligently route the data.
+            - **High Confidence (e.g., > 0.80):** If the AI is certain about its prediction, the sequence is classified as **"Known"**.
+            - **Low Confidence:** If the AI is uncertain, it wisely refrains from guessing. The sequence is classified as **"Unknown"** and sent to our Discovery Engine. This avoids the misclassification errors that plague traditional tools.
+            """
+        )
+
+    with st.expander("Step 4: The Discovery Engine (Unsupervised Learning)"):
+        st.markdown(
+            """
+            This pipeline analyzes the "Unknown" sequences to find hidden patterns.
+            - **Feature Extraction (K-mers):** For this discovery phase, we create a different numerical fingerprint for each sequence by counting the frequency of short DNA "words" called **k-mers**.
+            - **Clustering (HDBSCAN):** The **HDBSCAN** algorithm, a powerful unsupervised learning technique, takes these fingerprints and groups similar sequences together. It automatically determines the number of clusters and identifies outliers as **"Noise."** Each cluster represents a potential novel species.
+            - **Visualization (UMAP):** To make these findings intuitive, we use **UMAP**, a state-of-the-art dimensionality reduction algorithm, to create an interactive 2D map of the "unknown genetic space." This allows scientists to visually explore the relationships between the newly discovered clusters.
+            """
+        )
+    
+    with st.expander("Step 5: Live Annotation (The Final Insight)"):
+        st.markdown(
+            """
+            To bridge our discoveries with existing biological knowledge, the user can select a representative from any novel cluster and click the "BLAST" button.
+            - **API Connection:** Our application sends the sequence directly to the **NCBI BLAST server** via its public API.
+            - **Real-Time Results:** The server performs a search against the world's largest genetic database and returns the closest known relative, providing immediate and valuable context to the new discovery.
+            """
+        )
 
 
 # --- Application Page ---
 elif page == "🚀 The Application":
+    # (The application logic remains the same)
     st.title("🛰️ DeepGene: Ecological Discovery Engine")
-    
+    # ... (rest of the application code)
     with st.sidebar:
         st.header("Analysis Controls")
         uploaded_file = st.file_uploader("Upload your FASTA file", type=["fasta", "fa"], help="Upload a standard FASTA file containing your eDNA sequences.")
