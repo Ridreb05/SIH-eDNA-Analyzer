@@ -9,9 +9,7 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 import plotly.graph_objects as go
 
-# --- All your helper functions (load_models, parse_fasta, etc.) go here ---
-# (Pasting the full set of functions from our previous version for completeness)
-
+# --- Load Pre-trained Deep Learning Models ---
 @st.cache_resource
 def load_deep_learning_models():
     try:
@@ -22,10 +20,26 @@ def load_deep_learning_models():
         st.error(f"Model files not found or failed to load! Run 'train_cnn_model.py' first. Error: {e}")
         return None, None
 
+model, label_encoder = load_deep_learning_models()
+
+# --- Helper & XAI Functions ---
+
 def one_hot_encode(sequence, max_len):
+    """
+    One-hot encodes a DNA sequence, handling both padding and trimming.
+    """
+    # First, truncate the sequence if it's longer than max_len
+    sequence = sequence[:max_len]
+    
     mapping = {'A': [1,0,0,0], 'C': [0,1,0,0], 'G': [0,0,1,0], 'T': [0,0,0,1]}
     encoded_seq = np.array([mapping.get(base, [0,0,0,0]) for base in sequence.upper()])
-    return np.pad(encoded_seq, ((0, max_len - len(sequence)), (0,0)), 'constant')
+    
+    # Then, pad the sequence if it's shorter than max_len
+    pad_width = max_len - len(sequence)
+    # This calculation will now never be negative
+    padded_seq = np.pad(encoded_seq, ((0, pad_width), (0,0)), 'constant')
+    
+    return padded_seq
 
 def parse_fasta(uploaded_file_content):
     stringio = io.StringIO(uploaded_file_content)
@@ -35,19 +49,32 @@ def parse_fasta(uploaded_file_content):
 def generate_saliency_map(model, input_sequence):
     max_len = model.input_shape[1]
     input_tensor = tf.convert_to_tensor(one_hot_encode(input_sequence, max_len).reshape(1, max_len, 4), dtype=tf.float32)
+
     with tf.GradientTape() as tape:
         tape.watch(input_tensor)
         predictions = model(input_tensor)
         top_prediction_index = tf.argmax(predictions[0])
         top_class_prediction = predictions[:, top_prediction_index]
+    
     gradients = tape.gradient(top_class_prediction, input_tensor)
     saliency_scores = tf.reduce_max(tf.abs(gradients), axis=-1)[0]
     saliency_scores = (saliency_scores - tf.reduce_min(saliency_scores)) / (tf.reduce_max(saliency_scores) - tf.reduce_min(saliency_scores) + 1e-8)
+    
     return saliency_scores.numpy()[:len(input_sequence)]
 
 def plot_saliency_map(sequence, scores):
-    fig = go.Figure(data=go.Heatmap(z=[scores], x=list(sequence), y=['Importance'], colorscale='Reds', showscale=False))
-    fig.update_layout(title='DNA Saliency Map (Importance of Each Nucleotide for Classification)', xaxis_title="DNA Sequence", yaxis_title="")
+    fig = go.Figure(data=go.Heatmap(
+        z=[scores],
+        x=list(sequence),
+        y=['Importance'],
+        colorscale='Reds',
+        showscale=False
+    ))
+    fig.update_layout(
+        title='DNA Saliency Map (Importance of Each Nucleotide for Classification)',
+        xaxis_title="DNA Sequence",
+        yaxis_title=""
+    )
     return fig
 
 # --- Main Application ---
@@ -55,7 +82,6 @@ st.set_page_config(page_title="DeepGene eDNA Analyzer", layout="wide")
 
 # --- Sidebar Navigation ---
 with st.sidebar:
-    # You can create a simple logo or use text
     st.title("DeepGene")
     page = st.radio("Navigation", ["🌐 About the Project", "🚀 The Application"])
     st.markdown("---")
@@ -168,3 +194,4 @@ elif page == "🚀 The Application":
                     st.info("No sequences to analyze for novelty.")
     else:
         st.info("Upload a file and click 'Analyze' to begin.")
+
