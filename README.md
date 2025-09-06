@@ -54,9 +54,10 @@ DeepGene bridges AI-driven discovery with biological knowledge.
 | **Collaboration**   | Git, GitHub |
 
 ## 🛠️ Team DeepGene
-Debanik Das
-Aditya Sarkar
-Suswastik Bhattacharjee
-Anirban Sebait
-Akangkhita Basu
-Harmeet Kaur
+- **Debanik Das**
+- **Aditya Sarkar**
+- **Suswastik Bhattacharjee**
+- **Anirban Sebait**
+- **Akangkhita Basu**
+- **Harmeet Kaur**
+
