@@ -115,7 +115,7 @@ elif page == "⚙️ How DeepGene Works":
     st.title("Inside the Engine: The DeepGene AI Pipeline")
     st.markdown("---")
 
-    st.image("https://i.imgur.com/8z2gZ2k.png", caption="The DeepGene Data Processing Flowchart")
+    st.image("https://drive.google.com/file/d/1Gs8T9wcb_BPFhIJkN9O3lLskPG06Ip1s/view?usp=sharing", caption="The DeepGene Data Processing Flowchart")
 
     with st.expander("Step 1: Data Ingestion & Preprocessing"):
         st.markdown(
@@ -254,4 +254,3 @@ elif page == "🚀 The Application":
                     st.info("No unknown sequences to analyze for novelty.")
     else:
         st.warning("Application requires model files. Please ensure the training script has been run and models are present.")
-
