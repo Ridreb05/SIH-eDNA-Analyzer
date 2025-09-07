@@ -115,7 +115,7 @@ elif page == "⚙️ How DeepGene Works":
     st.title("Inside the Engine: The DeepGene AI Pipeline")
     st.markdown("---")
 
-    st.image("https://iili.io/KnyNcgI.png", caption="The DeepGene Data Processing Flowchart")
+    st.image("https://i.imgur.com/8z2gZ2k.png", caption="The DeepGene Data Processing Flowchart")
 
     with st.expander("Step 1: Data Ingestion & Preprocessing"):
         st.markdown(
@@ -209,7 +209,7 @@ elif page == "🚀 The Application":
                     st.bar_chart(known_df['predicted_taxon'].value_counts())
                     with st.expander("View Detailed Classification Data"):
                         st.dataframe(known_df[['id', 'predicted_taxon', 'confidence']])
-                else:    
+                else: 
                     st.info("No sequences met the confidence threshold to be classified as 'known'.")
             
             with tab3:
@@ -254,3 +254,4 @@ elif page == "🚀 The Application":
                     st.info("No unknown sequences to analyze for novelty.")
     else:
         st.warning("Application requires model files. Please ensure the training script has been run and models are present.")
+
