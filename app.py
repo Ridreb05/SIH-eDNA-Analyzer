@@ -168,7 +168,7 @@ elif page == "⚙️ How DeepGene Works":
 # --- Application Page ---
 elif page == "🚀 The Application":
     # (The application logic remains the same)
-    st.title("🛰️ DeepGene: Ecological Discovery Engine")
+    st.title("🛰️ DeepGene: eDNA Biodiversity Analysis Engine")
     # ... (rest of the application code)
     with st.sidebar:
         st.header("Analysis Controls")
