@@ -115,7 +115,7 @@ elif page == "⚙️ How DeepGene Works":
     st.title("Inside the Engine: The DeepGene AI Pipeline")
     st.markdown("---")
 
-    st.image("https://iili.io/KnyNcgI.png", caption="The DeepGene Data Processing Flowchart")
+    st.image("https://iili.io/KnyNcgI.png", caption="The DeepGene Data Processing Flowchart",width=700)
 
     with st.expander("Step 1: Data Ingestion & Preprocessing"):
         st.markdown(
