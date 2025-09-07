@@ -1,0 +1,17 @@
+# .streamlit/config.toml
+
+[theme]
+base="light"
+primaryColor="#31333F"
+backgroundColor="#FFFFFF"
+secondaryBackgroundColor="#F0F2F6"
+textColor="#31333F"
+font="sans serif"
+
+[client]
+# This enables the theme selector in the settings menu
+showSidebarNavigation = true
+
+# This is an experimental feature that allows the theme to be set from the browser's query parameters.
+[browser]
+gatherUsageStats = false
