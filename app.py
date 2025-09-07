@@ -85,7 +85,7 @@ with st.sidebar:
 # --- About Page ---
 if page == "🌐 About the Project":
     st.title("Unveiling the Secrets of the Deep Sea")
-    st.subheader("An AI-Powered Research Platform for eDNA Biodiversity Analysis")
+    st.subheader("DeepGene: An AI-Powered Platform for eDNA Biodiversity Analysis")
     st.markdown("---")
     st.markdown("### 🌊 The Challenge: A Universe of Unknowns")
     st.write("The deep ocean is Earth's last great frontier... CMLRE scientists need a tool that can navigate this uncharted genetic territory.")
