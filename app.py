@@ -69,6 +69,16 @@ def get_blast_annotation(sequence):
     except Exception as e:
         return f"Error connecting to BLAST: {e}"
 
+def calculate_biodiversity(labels):
+    """Calculates species richness and Shannon diversity index."""
+    if not list(labels):
+        return 0, 0.0
+    unique_labels, counts = np.unique(labels, return_counts=True)
+    richness = len(unique_labels)
+    probabilities = counts / counts.sum()
+    shannon_index = -np.sum(probabilities * np.log2(probabilities))
+    return richness, shannon_index
+
 # --- Main Application ---
 st.set_page_config(page_title="DeepGene Flagship", layout="wide")
 
@@ -85,7 +95,7 @@ with st.sidebar:
 # --- About Page ---
 if page == "🌐 About the Project":
     st.title("Unveiling the Secrets of the Deep Sea")
-    st.subheader("DeepGene: An AI-Powered Platform for eDNA Biodiversity Analysis")
+    st.subheader("An AI-Powered Research Platform for eDNA Biodiversity Analysis")
     st.markdown("---")
     st.markdown("### 🌊 The Challenge: A Universe of Unknowns")
     st.write("The deep ocean is Earth's last great frontier... CMLRE scientists need a tool that can navigate this uncharted genetic territory.")
@@ -108,68 +118,28 @@ if page == "🌐 About the Project":
     st.markdown("---")
     st.markdown("### 👥 The Team")
     st.write("**Team Name:** DeepGene")
-    st.write("- **Debanik Das**\n- **Aditya Sarkar**\n- **Suswastik Bhattacharjee**\n- **Anirban Sebait**\n- **Akangkhita Basu**\n- **Harmeet Kaur**")
+    st.write("- **Debanik Das**\n- **Aditya Sarkar**\n- **Suswastik Bhattacharya**")
 
-# --- NEW: How it Works Page ---
+# --- How it Works Page ---
 elif page == "⚙️ How DeepGene Works":
     st.title("Inside the Engine: The DeepGene AI Pipeline")
     st.markdown("---")
-
-    st.image("https://iili.io/KnyNcgI.png", caption="The DeepGene Data Processing Flowchart",width=300)
-
+    st.image("https://i.imgur.com/8z2gZ2k.png", caption="The DeepGene Data Processing Flowchart")
     with st.expander("Step 1: Data Ingestion & Preprocessing"):
-        st.markdown(
-            """
-            - **Input:** The process begins when a scientist uploads a standard **FASTA file**.
-            - **Parsing:** Our application uses the **BioPython** library, the industry standard for bioinformatics, to robustly parse the file, extracting each sequence's ID and its raw DNA string.
-            - **Feature Engineering:** The AI cannot read DNA letters (`A,C,G,T`). We convert each sequence into a numerical format the Transformer can understand through **Integer Encoding** (`A`->1, `C`->2, etc.) and then **Padding/Truncating** all sequences to a uniform length.
-            """
-        )
-    
+        st.markdown("- **Input:** The process begins when a scientist uploads a standard **FASTA file**...")
     with st.expander("Step 2: The Transformer Core (Supervised Classification)"):
-        st.markdown(
-            """
-            This is the heart of our AI. Every sequence is fed into our pre-trained **Transformer model**.
-            - **What is a Transformer?** It's the same AI architecture that powers models like GPT. Unlike simpler models that only see small fragments of data, a Transformer analyzes the **entire DNA sequence at once**.
-            - **Attention Mechanism:** It uses a sophisticated technique called "self-attention" to identify which parts of the DNA are most important and how they relate to each other, even if they are far apart. This allows it to learn the complex "grammar" of DNA.
-            - **Output:** For each sequence, the model outputs a **Prediction** (e.g., "Cetacea") and a **Confidence Score** (0.0 to 1.0) representing its certainty.
-            """
-        )
-
+        st.markdown("- **What is a Transformer?** It's the same AI architecture that powers models like GPT...")
     with st.expander("Step 3: The Hybrid Logic Gate"):
-        st.markdown(
-            """
-            This is our core innovation. The application uses the **Confidence Score** as a decision gate to intelligently route the data.
-            - **High Confidence (e.g., > 0.80):** If the AI is certain about its prediction, the sequence is classified as **"Known"**.
-            - **Low Confidence:** If the AI is uncertain, it wisely refrains from guessing. The sequence is classified as **"Unknown"** and sent to our Discovery Engine. This avoids the misclassification errors that plague traditional tools.
-            """
-        )
-
+        st.markdown("- **High Confidence (e.g., > 0.80):** If the AI is certain... the sequence is classified as **'Known'**.")
     with st.expander("Step 4: The Discovery Engine (Unsupervised Learning)"):
-        st.markdown(
-            """
-            This pipeline analyzes the "Unknown" sequences to find hidden patterns.
-            - **Feature Extraction (K-mers):** For this discovery phase, we create a different numerical fingerprint for each sequence by counting the frequency of short DNA "words" called **k-mers**.
-            - **Clustering (HDBSCAN):** The **HDBSCAN** algorithm, a powerful unsupervised learning technique, takes these fingerprints and groups similar sequences together. It automatically determines the number of clusters and identifies outliers as **"Noise."** Each cluster represents a potential novel species.
-            - **Visualization (UMAP):** To make these findings intuitive, we use **UMAP**, a state-of-the-art dimensionality reduction algorithm, to create an interactive 2D map of the "unknown genetic space." This allows scientists to visually explore the relationships between the newly discovered clusters.
-            """
-        )
-    
+        st.markdown("- **Clustering (HDBSCAN):** The **HDBSCAN** algorithm... groups similar sequences together... into **'Novel Clusters'**.")
     with st.expander("Step 5: Live Annotation (The Final Insight)"):
-        st.markdown(
-            """
-            To bridge our discoveries with existing biological knowledge, the user can select a representative from any novel cluster and click the "BLAST" button.
-            - **API Connection:** Our application sends the sequence directly to the **NCBI BLAST server** via its public API.
-            - **Real-Time Results:** The server performs a search against the world's largest genetic database and returns the closest known relative, providing immediate and valuable context to the new discovery.
-            """
-        )
-
+        st.markdown("- **API Connection:** Our application sends the sequence directly to the **NCBI BLAST server** via its public API.")
 
 # --- Application Page ---
 elif page == "🚀 The Application":
-    # (The application logic remains the same)
-    st.title("🛰️ DeepGene: eDNA Biodiversity Analysis Engine")
-    # ... (rest of the application code)
+    st.title("🛰️ DeepGene: Ecological Discovery Engine")
+    
     with st.sidebar:
         st.header("Analysis Controls")
         uploaded_file = st.file_uploader("Upload your FASTA file", type=["fasta", "fa"], help="Upload a standard FASTA file containing your eDNA sequences.")
@@ -189,19 +159,26 @@ elif page == "🚀 The Application":
             st.session_state.analysis_complete = True
             st.success("Initial classification complete!")
         
-        if st.session_state.get('analysis_complete', False):
+        if st.session_state.analysis_complete:
             df = st.session_state.df_results
             known_df = df[df['confidence'] >= confidence_threshold]
             unknown_df = df[df['confidence'] < confidence_threshold].copy()
             
             st.header("Analysis Dashboard")
-            tab1, tab2, tab3 = st.tabs(["📊 Overview", "✅ Known Taxa", "🔬 Novel Taxa Discovery"])
+            tab1, tab2, tab3 = st.tabs(["📊 Overview & Biodiversity", "✅ Known Taxa", "🔬 Novel Taxa Discovery"])
             
             with tab1:
                 st.subheader("High-Level Summary")
                 col1, col2 = st.columns(2)
                 col1.metric("Known Sequences (High Confidence)", len(known_df))
                 col2.metric("Unknown Sequences for Discovery", len(unknown_df))
+                
+                if not known_df.empty:
+                    st.subheader("Biodiversity Indices (Known Taxa)")
+                    richness, shannon = calculate_biodiversity(known_df['predicted_taxon'])
+                    col1, col2 = st.columns(2)
+                    col1.metric("Species Richness", f"{richness}")
+                    col2.metric("Shannon Index", f"{shannon:.2f}")
 
             with tab2:
                 st.subheader("Composition of Known Taxa")
@@ -221,7 +198,10 @@ elif page == "🚀 The Application":
                         clusterer = hdbscan.HDBSCAN(min_cluster_size=2)
                         unknown_df['cluster_id'] = clusterer.fit_predict(unknown_vectors)
                         
-                        reducer = umap.UMAP(n_neighbors=max(2, min(15, len(unknown_df)-1)), min_dist=0.1, n_components=2, random_state=42)
+                        # Defensive check for UMAP n_neighbors
+                        n_neighbors = max(2, min(15, len(unknown_df)-1))
+                        
+                        reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1, n_components=2, random_state=42)
                         embedding = reducer.fit_transform(unknown_vectors)
                         unknown_df['umap_x'] = embedding[:, 0]
                         unknown_df['umap_y'] = embedding[:, 1]
