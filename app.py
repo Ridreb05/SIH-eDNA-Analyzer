@@ -196,8 +196,8 @@ elif page == "🚀 The Application":
                         vectorizer = CountVectorizer(analyzer='char', ngram_range=(4, 4))
                         unknown_vectors = vectorizer.fit_transform(unknown_df['sequence'])
                         clusterer = hdbscan.HDBSCAN(min_cluster_size=2)
-                        # --- FIX: Convert sparse matrix to dense array before clustering ---
-                        dense_unknown_vectors = unknown_vectors.toarray()
+                        # --- FIX: Convert sparse matrix to dense float array before clustering ---
+                        dense_unknown_vectors = unknown_vectors.toarray().astype(np.float64)
                         unknown_df['cluster_id'] = clusterer.fit_predict(dense_unknown_vectors)
                         
                         # Defensive check for UMAP n_neighbors
