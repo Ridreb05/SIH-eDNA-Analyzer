@@ -192,47 +192,54 @@ elif page == "🚀 The Application":
             with tab3:
                 st.subheader("Discovery Engine for Unknown Sequences")
                 if not unknown_df.empty:
-                    with st.spinner("Mapping the novel genetic space..."):
-                        vectorizer = CountVectorizer(analyzer='char', ngram_range=(4, 4))
-                        unknown_vectors = vectorizer.fit_transform(unknown_df['sequence'])
-                        
-                        # --- FIX: Instruct HDBSCAN to use a more robust generic algorithm and ensure float data type ---
-                        clusterer = hdbscan.HDBSCAN(min_cluster_size=2, algorithm='generic')
-                        dense_unknown_vectors = unknown_vectors.toarray().astype(np.float64)
-                        unknown_df['cluster_id'] = clusterer.fit_predict(dense_unknown_vectors)
-                        
-                        # Defensive check for UMAP n_neighbors
-                        n_neighbors = max(2, min(15, len(unknown_df)-1))
-                        
-                        reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1, n_components=2, random_state=42)
-                        embedding = reducer.fit_transform(unknown_vectors)
-                        unknown_df['umap_x'] = embedding[:, 0]
-                        unknown_df['umap_y'] = embedding[:, 1]
-                        
-                        unknown_df['display_label'] = unknown_df['cluster_id'].apply(lambda x: f'Cluster {x+1}' if x != -1 else 'Noise')
-                    
-                    st.markdown("#### Interactive Map of Novel Genetic Space (UMAP)")
-                    fig = px.scatter(
-                        unknown_df, x='umap_x', y='umap_y', color='display_label',
-                        hover_data=['id'], title="Hover over points to see Sequence IDs",
-                        labels={'color': 'Cluster ID'}
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-
-                    st.markdown("#### Annotate Discovered Clusters with NCBI BLAST")
-                    representative_df = unknown_df[unknown_df['cluster_id'] != -1].groupby('display_label').first().reset_index()
-                    
-                    if not representative_df.empty:
-                        for index, row in representative_df.iterrows():
-                            with st.container(border=True):
-                                col1, col2 = st.columns([3, 1])
-                                col1.text(f"Representative for {row['display_label']}: {row['id']}")
-                                if col2.button("BLAST this sequence", key=f"blast_{index}"):
-                                    with st.spinner(f"Querying NCBI for {row['id']}... This can take up to a minute."):
-                                        annotation = get_blast_annotation(row['sequence'])
-                                        st.success(f"**Top NCBI Match:** {annotation}")
+                    # --- NEW FIX: Defensive check for number of samples ---
+                    if len(unknown_df) < 2:
+                        st.warning("Fewer than 2 unknown sequences found. Clustering analysis requires at least 2 data points.")
                     else:
-                        st.info("No stable clusters were found to annotate.")
+                        with st.spinner("Mapping the novel genetic space..."):
+                            vectorizer = CountVectorizer(analyzer='char', ngram_range=(4, 4))
+                            unknown_vectors = vectorizer.fit_transform(unknown_df['sequence'])
+                            
+                            clusterer = hdbscan.HDBSCAN(min_cluster_size=2, algorithm='generic')
+                            
+                            # --- NEW FIX: Ensure data is a C-contiguous float64 array ---
+                            dense_vectors = unknown_vectors.toarray().astype(np.float64)
+                            contiguous_vectors = np.ascontiguousarray(dense_vectors)
+                            
+                            unknown_df['cluster_id'] = clusterer.fit_predict(contiguous_vectors)
+                            
+                            # Defensive check for UMAP n_neighbors
+                            n_neighbors = max(2, min(15, len(unknown_df)-1))
+                            
+                            reducer = umap.UMAP(n_neighbors=n_neighbors, min_dist=0.1, n_components=2, random_state=42)
+                            embedding = reducer.fit_transform(unknown_vectors)
+                            unknown_df['umap_x'] = embedding[:, 0]
+                            unknown_df['umap_y'] = embedding[:, 1]
+                            
+                            unknown_df['display_label'] = unknown_df['cluster_id'].apply(lambda x: f'Cluster {x+1}' if x != -1 else 'Noise')
+                        
+                        st.markdown("#### Interactive Map of Novel Genetic Space (UMAP)")
+                        fig = px.scatter(
+                            unknown_df, x='umap_x', y='umap_y', color='display_label',
+                            hover_data=['id'], title="Hover over points to see Sequence IDs",
+                            labels={'color': 'Cluster ID'}
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+
+                        st.markdown("#### Annotate Discovered Clusters with NCBI BLAST")
+                        representative_df = unknown_df[unknown_df['cluster_id'] != -1].groupby('display_label').first().reset_index()
+                        
+                        if not representative_df.empty:
+                            for index, row in representative_df.iterrows():
+                                with st.container(border=True):
+                                    col1, col2 = st.columns([3, 1])
+                                    col1.text(f"Representative for {row['display_label']}: {row['id']}")
+                                    if col2.button("BLAST this sequence", key=f"blast_{index}"):
+                                        with st.spinner(f"Querying NCBI for {row['id']}... This can take up to a minute."):
+                                            annotation = get_blast_annotation(row['sequence'])
+                                            st.success(f"**Top NCBI Match:** {annotation}")
+                        else:
+                            st.info("No stable clusters were found to annotate.")
                 else:
                     st.info("No unknown sequences to analyze for novelty.")
     else:
