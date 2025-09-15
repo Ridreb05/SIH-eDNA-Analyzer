@@ -12,16 +12,14 @@ from tensorflow.keras.utils import to_categorical
 
 print("Starting Advanced AI (Transformer) model training process...")
 
-# --- 1. Load and Prepare Data ---
 fasta_path = 'training_data.fasta'
 sequences = [{'label': record.id.split('_')[0], 'sequence': str(record.seq)} for record in SeqIO.parse(fasta_path, "fasta")]
 df = pd.DataFrame(sequences)
 print(f"Loaded {len(df)} sequences.")
 
-# --- 2. Integer Encode DNA Sequences ---
-# Transformers work best with token embeddings, so we convert DNA to integers first.
+
 def dna_to_integers(sequence):
-    mapping = {'A': 1, 'C': 2, 'G': 3, 'T': 4} # 0 is reserved for padding
+    mapping = {'A': 1, 'C': 2, 'G': 3, 'T': 4} 
     return [mapping.get(base, 0) for base in sequence.upper()]
 
 max_len = df['sequence'].str.len().max()
@@ -29,13 +27,11 @@ X = tf.keras.preprocessing.sequence.pad_sequences(
     [dna_to_integers(seq) for seq in df['sequence']], maxlen=max_len, padding='post'
 )
 
-# --- 3. Encode Labels ---
 label_encoder = LabelEncoder()
 y_integer = label_encoder.fit_transform(df['label'])
 y = to_categorical(y_integer)
 print("Data has been integer encoded.")
 
-# --- 4. Build the Transformer Block ---
 class TransformerBlock(tf.keras.layers.Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1):
         super(TransformerBlock, self).__init__()
@@ -56,13 +52,11 @@ class TransformerBlock(tf.keras.layers.Layer):
         ffn_output = self.dropout2(ffn_output, training=training)
         return self.layernorm2(out1 + ffn_output)
 
-# --- 5. Build the Full Model ---
-embed_dim = 32  # Embedding size for each token
-num_heads = 2  # Number of attention heads
-ff_dim = 32  # Hidden layer size in feed forward network inside transformer
-
+embed_dim = 32  
+num_heads = 2  
+ff_dim = 32  #
 inputs = Input(shape=(max_len,))
-embedding_layer = Embedding(input_dim=5, output_dim=embed_dim) # Vocabulary size is 5 (A,C,G,T + padding)
+embedding_layer = Embedding(input_dim=5, output_dim=embed_dim) 
 x = embedding_layer(inputs)
 transformer_block = TransformerBlock(embed_dim, num_heads, ff_dim)
 x = transformer_block(x)
@@ -75,13 +69,11 @@ model = Model(inputs=inputs, outputs=outputs)
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 model.summary()
 
-# --- 6. Train the Model ---
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 print("\nStarting Transformer model training...")
 model.fit(X_train, y_train, epochs=30, batch_size=4, validation_split=0.1, verbose=0)
 print("Model training complete.")
 
-# --- 7. Evaluate and Save ---
 loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
 print(f"Transformer Model Accuracy: {accuracy*100:.2f}%")
 
