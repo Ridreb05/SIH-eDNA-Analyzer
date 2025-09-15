@@ -12,7 +12,6 @@ from sklearn.feature_extraction.text import CountVectorizer
 from Bio.Blast import NCBIWWW, NCBIXML
 import umap.umap_ as umap
 
-# --- Define the custom TransformerBlock layer ---
 class TransformerBlock(tf.keras.layers.Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1, **kwargs):
         super(TransformerBlock, self).__init__(**kwargs)
@@ -34,7 +33,6 @@ class TransformerBlock(tf.keras.layers.Layer):
         config.update({'embed_dim': self.att.key_dim, 'num_heads': self.att.num_heads, 'ff_dim': self.ffn.layers[0].units, 'rate': self.dropout1.rate,})
         return config
 
-# --- Load Pre-trained Transformer Model ---
 @st.cache_resource
 def load_advanced_models():
     try:
@@ -47,7 +45,6 @@ def load_advanced_models():
 
 model, label_encoder = load_advanced_models()
 
-# --- Helper & Analysis Functions ---
 def dna_to_integers(sequence):
     mapping = {'A': 1, 'C': 2, 'G': 3, 'T': 4}
     return [mapping.get(base, 0) for base in sequence.upper()]
@@ -69,20 +66,17 @@ def get_blast_annotation(sequence):
     except Exception as e:
         return f"Error connecting to BLAST: {e}"
 
-# --- Main Application ---
 st.set_page_config(page_title="DeepGene Flagship", layout="wide")
 
 if 'analysis_complete' not in st.session_state:
     st.session_state.analysis_complete = False
 
-# --- Sidebar ---
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/en/thumb/d/df/Amity_University_Kolkata.svg/800px-Amity_University_Kolkata.svg.png", width=150)
     st.title("DeepGene")
     page = st.radio("Navigation", ["🌐 About the Project", "⚙️ How DeepGene Works", "🚀 The Application"], label_visibility="hidden")
     st.markdown("---")
 
-# --- About Page ---
 if page == "🌐 About the Project":
     st.title("Unveiling the Secrets of the Deep Sea")
     st.subheader("DeepGene: An AI-Powered Platform for eDNA Biodiversity Analysis")
@@ -110,7 +104,6 @@ if page == "🌐 About the Project":
     st.write("**Team Name:** DeepGene")
     st.write("- **Debanik Das**\n- **Aditya Sarkar**\n- **Suswastik Bhattacharjee**\n- **Anirban Sebait**\n- **Akangkhita Basu**\n- **Harmeet Kaur**")
 
-# --- NEW: How it Works Page ---
 elif page == "⚙️ How DeepGene Works":
     st.title("Inside the Engine: The DeepGene AI Pipeline")
     st.markdown("---")
@@ -165,11 +158,8 @@ elif page == "⚙️ How DeepGene Works":
         )
 
 
-# --- Application Page ---
 elif page == "🚀 The Application":
-    # (The application logic remains the same)
     st.title("🛰️ DeepGene: eDNA Biodiversity Analysis Engine")
-    # ... (rest of the application code)
     with st.sidebar:
         st.header("Analysis Controls")
         uploaded_file = st.file_uploader("Upload your FASTA file", type=["fasta", "fa"], help="Upload a standard FASTA file containing your eDNA sequences.")
