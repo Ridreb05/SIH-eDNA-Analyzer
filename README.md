@@ -34,7 +34,7 @@ DeepGene introduces a ** Hybrid AI Pipeline** that minimizes reliance on databas
 
 ---
 
-## ⭐ The Flagship Feature: Live NCBI Annotation  
+## ⭐ Live NCBI Annotation  
 DeepGene bridges AI-driven discovery with biological knowledge.  
 - With a single click, scientists can send a **representative sequence** from a new cluster to the **NCBI BLAST server** in real-time.  
 - Provides **immediate biological context** → "What is the closest known relative to this potential new species?"  
