@@ -52,12 +52,3 @@ DeepGene bridges AI-driven discovery with biological knowledge.
 | **Data Processing** | Pandas, NumPy, BioPython |
 | **Visualization**   | Plotly |
 | **Collaboration**   | Git, GitHub |
-
-## 👥 Team DeepGene
-- **Debanik Das**
-- **Aditya Sarkar**
-- **Suswastik Bhattacharjee**
-- **Anirban Sebait**
-- **Akangkhita Basu**
-- **Harmeet Kaur**
-
