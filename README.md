@@ -1,5 +1,5 @@
 # DeepGene: A Transformer-Powered Platform for Deep-Sea eDNA Discovery  
-### A State-of-the-Art Solution for Smart India Hackathon 2025 - Problem Statement: **ID25042**
+### Solution for Smart India Hackathon 2025 - Problem Statement: **ID25042**
 
 DeepGene is an advanced, AI-driven research platform designed to tackle the critical challenge of identifying biodiversity from environmental DNA (eDNA) in deep-sea ecosystems.  
 
@@ -20,7 +20,7 @@ This scientific roadblock hinders **vital conservation efforts** and prevents th
 
 ## ✨ Our Solution: The DeepGene Discovery Engine  
 
-DeepGene introduces a **state-of-the-art Hybrid AI Pipeline** that minimizes reliance on databases and embraces a **discovery-oriented approach**. Our platform intelligently separates the problem into two parallel workflows.  
+DeepGene introduces a ** Hybrid AI Pipeline** that minimizes reliance on databases and embraces a **discovery-oriented approach**. Our platform intelligently separates the problem into two parallel workflows.  
 
 ### 🧠 Known Taxa Identification (Supervised Deep Learning)  
 - A powerful **Transformer model** (same architecture powering GPT-like systems) serves as the core classification engine.  
