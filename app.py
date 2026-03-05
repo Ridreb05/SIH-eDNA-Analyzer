@@ -12,9 +12,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 from Bio.Blast import NCBIWWW, NCBIXML
 import umap.umap_ as umap
 
-# --- Define the custom TransformerBlock layer ---
+# Defining the custom TransformerBlock layer 
 class TransformerBlock(tf.keras.layers.Layer):
-    # (The class definition is the same as before)
+  
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1, **kwargs):
         super(TransformerBlock, self).__init__(**kwargs)
         self.att = tf.keras.layers.MultiHeadAttention(num_heads=num_heads, key_dim=embed_dim)
@@ -35,7 +35,7 @@ class TransformerBlock(tf.keras.layers.Layer):
         config.update({'embed_dim': self.att.key_dim, 'num_heads': self.att.num_heads, 'ff_dim': self.ffn.layers[0].units, 'rate': self.dropout1.rate,})
         return config
 
-# --- Load Pre-trained Models and Config ---
+# Loading Pre-trained Models and Config 
 @st.cache_resource
 def load_advanced_models():
     try:
@@ -49,7 +49,7 @@ def load_advanced_models():
 
 model, label_encoder, max_len = load_advanced_models()
 
-# --- Helper & Analysis Functions (no changes needed) ---
+
 def dna_to_integers(sequence):
     mapping = {'A': 1, 'C': 2, 'G': 3, 'T': 4}
     return [mapping.get(base, 0) for base in sequence.upper()]
@@ -79,20 +79,17 @@ def calculate_biodiversity(labels):
     shannon_index = -np.sum(probabilities * np.log2(probabilities))
     return richness, shannon_index
 
-# --- Main Application ---
 st.set_page_config(page_title="DeepGene Flagship", layout="wide")
 
 if 'analysis_complete' not in st.session_state:
     st.session_state.analysis_complete = False
 
-# --- Sidebar and Page Navigation (no changes needed) ---
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/en/thumb/d/df/Amity_University_Kolkata.svg/800px-Amity_University_Kolkata.svg.png", width=150)
     st.title("DeepGene")
     page = st.radio("Navigation", ["🌐 About the Project", "⚙️ How DeepGene Works", "🚀 The Application"], label_visibility="hidden")
     st.markdown("---")
 
-# --- Pages ---
 if page == "🌐 About the Project":
     st.title("Unveiling the Secrets of the Deep Sea")
     st.subheader("An AI-Powered Research Platform for eDNA Biodiversity Analysis")
