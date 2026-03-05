@@ -1,54 +1,47 @@
-# DeepGene: A Transformer-Powered Platform for Deep-Sea eDNA Discovery  
-### Solution for Smart India Hackathon 2025 - Problem Statement: **ID25042**
+# DeepGene: Deep-Sea eDNA Taxonomic Classification Platform
+**Smart India Hackathon 2025 Submission | Problem Statement: ID25042**
 
-DeepGene is an advanced, AI-driven research platform designed to tackle the critical challenge of identifying biodiversity from environmental DNA (eDNA) in deep-sea ecosystems.  
-
-Developed for the **Ministry of Earth Sciences (MoES)**, this tool empowers **CMLRE scientists** to overcome the limitations of traditional bioinformatics, enabling **rapid, accurate, and insightful analysis** of complex eDNA datasets.  
+DeepGene is a bioinformatics platform developed for the Ministry of Earth Sciences (MoES) to assist CMLRE researchers in processing environmental DNA (eDNA) from deep-sea ecosystems. The tool provides a hybrid machine learning pipeline to classify known sequences and cluster unassigned reads for novel taxa discovery.
 
 ---
 
-## 🌊 The Core Challenge: A Universe of Unknowns  
-The deep ocean is Earth's last great frontier, a vast reservoir of undiscovered life. Traditional methods of identifying species from eDNA fail because they rely on genetic databases that are critically incomplete for deep-sea organisms. This leads to:  
-
-- **Misclassification**: Incorrectly identifying species.  
-- **Unassigned Reads**: A large portion of valuable data becomes unusable.  
-- **Computational Bottlenecks**: The process is slow, expensive, and requires deep bioinformatics expertise.  
-
-This scientific roadblock hinders **vital conservation efforts** and prevents the discovery of **novel species with profound biotechnological potential**.  
+## Problem Statement
+Standard eDNA taxonomic assignment relies heavily on sequence alignment against reference databases. Because genomic databases are critically incomplete for deep-sea organisms, traditional pipelines often result in:
+* **High Unassigned Read Rates:** Significant portions of sequencing data are discarded as "unknown."
+* **Taxonomic Misclassification:** Forcing sequence alignments can lead to incorrect species identification.
+* **Computational Overhead:** Processing large FASTQ/FASTA files through standard alignment algorithms is resource-intensive and creates bottlenecks.
 
 ---
 
-## ✨ Our Solution: The DeepGene Discovery Engine  
+## Pipeline Architecture
+DeepGene minimizes reliance on incomplete databases by utilizing a hybrid machine learning approach, separating the workflow into supervised classification and unsupervised clustering.
 
-DeepGene introduces a ** Hybrid AI Pipeline** that minimizes reliance on databases and embraces a **discovery-oriented approach**. Our platform intelligently separates the problem into two parallel workflows.  
+### 1. Supervised Classification (Known Taxa)
+* The primary classification engine utilizes a **Transformer architecture** rather than traditional k-mer matching or CNNs. 
+* By treating DNA sequences as contextual data, the model captures long-range genomic dependencies and complex sequence relationships, allowing for higher accuracy in taxonomic assignment based on available training data.
 
-### 🧠 Known Taxa Identification (Supervised Deep Learning)  
-- A powerful **Transformer model** (same architecture powering GPT-like systems) serves as the core classification engine.  
-- Unlike CNNs that capture only local patterns, the Transformer captures **long-range context** and **complex relationships** in DNA sequences, ensuring **superior accuracy**.  
-
-### 🔬 Novel Taxa Discovery (Unsupervised Learning)  
-- Sequences the Transformer cannot classify are flagged as **"Unknown"** and passed to the Discovery Engine.  
-- The engine uses:  
-  - **HDBSCAN** → Groups similar unknown sequences into high-confidence clusters (potential novel taxa).  
-  - **UMAP** → Creates a stunning, interactive 2D map of this "unknown genetic space," letting scientists visually explore relationships between clusters.  
+### 2. Unsupervised Discovery (Novel Taxa)
+* Sequences that fall below the Transformer's classification confidence threshold are routed to the discovery pipeline.
+* **HDBSCAN (Hierarchical Density-Based Spatial Clustering of Applications with Noise):** Groups similar unclassified sequences into high-confidence clusters, isolating potential novel taxa or variants.
+* **UMAP (Uniform Manifold Approximation and Projection):** Reduces the dimensionality of the sequence data to generate a 2D scatter plot, allowing researchers to visually analyze the distance and relationships between unknown genetic clusters.
 
 ---
 
-## ⭐ Live NCBI Annotation  
-DeepGene bridges AI-driven discovery with biological knowledge.  
-- With a single click, scientists can send a **representative sequence** from a new cluster to the **NCBI BLAST server** in real-time.  
-- Provides **immediate biological context** → "What is the closest known relative to this potential new species?"  
+## External Integration: NCBI BLAST API
+To bridge the gap between AI clustering and biological validation, DeepGene integrates directly with the NCBI BLAST server. 
+* Users can select a consensus sequence from any newly generated HDBSCAN cluster and query it against the NCBI database directly from the dashboard.
+* This provides immediate homology data, allowing researchers to identify the closest known phylogenetic relatives of unclassified reads.
 
 ---
 
-## 🛠️ Technology Stack  
+## Technology Stack
 
-| Category            | Technologies |
-|---------------------|--------------|
-| **Core Language**   | Python 3 |
-| **Web Dashboard**   | Streamlit |
-| **AI & Deep Learning** | TensorFlow (Keras) |
-| **Machine Learning** | Scikit-learn, HDBSCAN, UMAP-learn |
-| **Data Processing** | Pandas, NumPy, BioPython |
-| **Visualization**   | Plotly |
-| **Collaboration**   | Git, GitHub |
+| Component | Technologies Used |
+| :--- | :--- |
+| **Language** | Python 3.x |
+| **Frontend/Dashboard** | Streamlit |
+| **Deep Learning Engine** | TensorFlow (Keras) |
+| **Machine Learning & Clustering** | Scikit-learn, HDBSCAN, UMAP-learn |
+| **Bioinformatics Processing** | BioPython, Pandas, NumPy |
+| **Data Visualization** | Plotly |
+| **Version Control** | Git, GitHub |
